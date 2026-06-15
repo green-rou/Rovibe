@@ -1,0 +1,44 @@
+# Gradle / файли збірки
+.gradle/
+build/
+out/
+/captures
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Локальна конфігурація (шлях до SDK тощо)
+local.properties
+
+# Логи / профілювання
+*.log
+*.hprof
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE (Android Studio / IntelliJ), включно з налаштуваннями плагінів
+*.iml
+.idea/
+
+# Ключі та секрети
+*.jks
+*.keystore
+key.properties
+keystore.properties
+secrets.properties
+*.pem
+*.p12
+*.key
+.env
+.env.*
+google-services.json
+
+# Claude
+.claude/
+CLAUDE.md
