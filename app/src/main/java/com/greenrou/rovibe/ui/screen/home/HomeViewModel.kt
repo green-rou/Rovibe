@@ -18,16 +18,19 @@ class HomeViewModel(
 ) : ViewModel() {
 
     private val _playingItemId = MutableStateFlow<String?>(null)
+    private val _pendingDelete = MutableStateFlow<SoundItem?>(null)
 
     val state: StateFlow<HomeState> = combine(
         repository.items,
         soundCommandRepository.playbackState,
         _playingItemId,
-    ) { items, playback, playingId ->
+        _pendingDelete,
+    ) { items, playback, playingId, pending ->
         HomeState(
             items = items,
             playingItemId = if (playback == PlaybackState.STOPPED) null else playingId,
             playbackState = playback,
+            pendingDelete = pending,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 
@@ -43,6 +46,21 @@ class HomeViewModel(
             soundCommandRepository.play(item.content)
             _playingItemId.value = item.id
         }
+    }
+
+    fun delete(item: SoundItem) {
+        if (_playingItemId.value == item.id) soundCommandRepository.stop()
+        repository.delete(item.id)
+        _pendingDelete.value = item
+    }
+
+    fun undoDelete() {
+        _pendingDelete.value?.let { repository.add(it) }
+        _pendingDelete.value = null
+    }
+
+    fun dismissUndo() {
+        _pendingDelete.value = null
     }
 
     fun rename(id: String, name: String) {

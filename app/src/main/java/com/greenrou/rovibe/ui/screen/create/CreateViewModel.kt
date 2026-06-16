@@ -24,6 +24,8 @@ import kotlin.math.roundToInt
 private val WaveAnchorRegex = Regex("""(?i)\bwave\s*\(\s*\)""")
 private val BarsAnchorRegex = Regex("""(?i)\bbars\s*\(\s*\)""")
 private val PianoAnchorRegex = Regex("""(?i)\bpiano\s*\(([^)]*)\)""")
+private val GlobalTempoRegex = Regex("""(?i)(?:^|\n)\s*tempo\s*\((\d+)\)""")
+private val TempoModifierRegex = Regex("""(?i)\.tempo\s*\((\d+)\)""")
 
 class CreateViewModel(
     private val repository: SoundRepository,
@@ -37,10 +39,9 @@ class CreateViewModel(
         CreateState(
             input = TextFieldValue(editingItem?.content ?: ""),
             title = editingItem?.name,
-            waveAnchorOffset = findAnchorOffset(editingItem?.content ?: "", WaveAnchorRegex),
-            barsAnchorOffset = findAnchorOffset(editingItem?.content ?: "", BarsAnchorRegex),
-            pianoAnchorOffset = findAnchorOffset(editingItem?.content ?: "", PianoAnchorRegex),
-            pianoNotes = findPianoNotes(editingItem?.content ?: ""),
+            waveAnchorOffsets = findAllAnchorOffsets(editingItem?.content ?: "", WaveAnchorRegex),
+            barsAnchorOffsets = findAllAnchorOffsets(editingItem?.content ?: "", BarsAnchorRegex),
+            pianoVisualizers = findPianoVisualizers(editingItem?.content ?: ""),
         )
     )
 
@@ -48,8 +49,9 @@ class CreateViewModel(
         _state,
         soundCommandRepository.playbackState,
         soundCommandRepository.amplitude,
-    ) { state, playback, amplitude ->
-        state.copy(playbackState = playback, amplitude = amplitude)
+        soundCommandRepository.spectrumBands,
+    ) { state, playback, amplitude, bands ->
+        state.copy(playbackState = playback, amplitude = amplitude, spectrumBands = bands)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), _state.value)
 
     fun onInputChange(input: TextFieldValue) {
@@ -61,10 +63,9 @@ class CreateViewModel(
                 suggestions = suggestionsFor(input),
                 parameterHint = hint,
                 sliderEdit = resolveSliderEdit(input, hint),
-                waveAnchorOffset = findAnchorOffset(input.text, WaveAnchorRegex),
-                barsAnchorOffset = findAnchorOffset(input.text, BarsAnchorRegex),
-                pianoAnchorOffset = findAnchorOffset(input.text, PianoAnchorRegex),
-                pianoNotes = findPianoNotes(input.text),
+                waveAnchorOffsets = findAllAnchorOffsets(input.text, WaveAnchorRegex),
+                barsAnchorOffsets = findAllAnchorOffsets(input.text, BarsAnchorRegex),
+                pianoVisualizers = findPianoVisualizers(input.text),
             )
         }
     }
@@ -78,10 +79,9 @@ class CreateViewModel(
                 suggestions = emptyList(),
                 parameterHint = hint,
                 sliderEdit = resolveSliderEdit(newInput, hint),
-                waveAnchorOffset = findAnchorOffset(newInput.text, WaveAnchorRegex),
-                barsAnchorOffset = findAnchorOffset(newInput.text, BarsAnchorRegex),
-                pianoAnchorOffset = findAnchorOffset(newInput.text, PianoAnchorRegex),
-                pianoNotes = findPianoNotes(newInput.text),
+                waveAnchorOffsets = findAllAnchorOffsets(newInput.text, WaveAnchorRegex),
+                barsAnchorOffsets = findAllAnchorOffsets(newInput.text, BarsAnchorRegex),
+                pianoVisualizers = findPianoVisualizers(newInput.text),
             )
         }
     }
@@ -207,27 +207,29 @@ class CreateViewModel(
         return SliderEdit(range, position, formatSliderValue(position))
     }
 
-    private fun findAnchorOffset(text: String, regex: Regex): Int? {
-        for (match in regex.findAll(text)) {
+    private fun findAllAnchorOffsets(text: String, regex: Regex): List<Int> {
+        return regex.findAll(text).mapNotNull { match ->
             val lineStart = text.lastIndexOf('\n', match.range.first).let { if (it == -1) 0 else it + 1 }
-            if (!text.substring(lineStart).trimStart().startsWith("#")) {
-                val lineEnd = text.indexOf('\n', match.range.last)
-                return if (lineEnd == -1) text.length else lineEnd
-            }
-        }
-        return null
+            if (text.substring(lineStart).trimStart().startsWith("#")) return@mapNotNull null
+            text.indexOf('\n', match.range.last).let { if (it == -1) text.length else it }
+        }.toList()
     }
 
-    private fun findPianoNotes(text: String): List<Int> {
-        for (match in PianoAnchorRegex.findAll(text)) {
+    private fun findPianoVisualizers(text: String): List<PianoVisualizer> {
+        return PianoAnchorRegex.findAll(text).mapNotNull { match ->
             val lineStart = text.lastIndexOf('\n', match.range.first).let { if (it == -1) 0 else it + 1 }
-            if (!text.substring(lineStart).trimStart().startsWith("#")) {
-                return match.groupValues[1].trim().split(Regex("\\s+"))
-                    .filter { it.isNotEmpty() }
-                    .map { it.toIntOrNull() ?: 0 }
-            }
-        }
-        return emptyList()
+            if (text.substring(lineStart).trimStart().startsWith("#")) return@mapNotNull null
+            val lineEnd = text.indexOf('\n', match.range.last).let { if (it == -1) text.length else it }
+            val notes = match.groupValues[1].trim().split(Regex("\\s+"))
+                .filter { it.isNotEmpty() }
+                .map { it.toIntOrNull() ?: 0 }
+            val line = text.substring(lineStart, lineEnd)
+            val tempo = TempoModifierRegex.find(line)?.groupValues?.get(1)?.toIntOrNull()
+                ?: GlobalTempoRegex.findAll(text.substring(0, lineStart))
+                    .lastOrNull()?.groupValues?.get(1)?.toIntOrNull()
+                ?: 120
+            PianoVisualizer(anchorOffset = lineEnd, notes = notes, tempo = tempo.coerceAtLeast(1))
+        }.toList()
     }
 
     private fun formatSliderValue(position: Float): String {

@@ -7,4 +7,5 @@ data class HomeState(
     val items: List<SoundItem> = emptyList(),
     val playingItemId: String? = null,
     val playbackState: PlaybackState = PlaybackState.STOPPED,
+    val pendingDelete: SoundItem? = null,
 )

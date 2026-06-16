@@ -1,8 +1,10 @@
 package com.greenrou.rovibe.ui.screen.create.content
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -32,6 +34,7 @@ fun CreateScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             CreateTopBar(
                 title = state.title ?: stringResource(R.string.create_title),
@@ -46,16 +49,17 @@ fun CreateScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
+                .navigationBarsPadding()
                 .imePadding(),
         ) {
             CreateTerminalInput(
                 value = state.input,
                 onValueChange = viewModel::onInputChange,
                 amplitude = state.amplitude,
-                waveAnchorOffset = state.waveAnchorOffset,
-                barsAnchorOffset = state.barsAnchorOffset,
-                pianoAnchorOffset = state.pianoAnchorOffset,
-                pianoNotes = state.pianoNotes,
+                spectrumBands = state.spectrumBands,
+                waveAnchorOffsets = state.waveAnchorOffsets,
+                barsAnchorOffsets = state.barsAnchorOffsets,
+                pianoVisualizers = state.pianoVisualizers,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxSize(),
