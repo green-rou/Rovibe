@@ -51,6 +51,11 @@ fun CreateScreen(
             CreateTerminalInput(
                 value = state.input,
                 onValueChange = viewModel::onInputChange,
+                amplitude = state.amplitude,
+                waveAnchorOffset = state.waveAnchorOffset,
+                barsAnchorOffset = state.barsAnchorOffset,
+                pianoAnchorOffset = state.pianoAnchorOffset,
+                pianoNotes = state.pianoNotes,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxSize(),
@@ -61,6 +66,7 @@ fun CreateScreen(
                     position = sliderEdit.position,
                     value = sliderEdit.valueText,
                     onPositionChange = viewModel::onSliderPositionChange,
+                    onPositionChangeFinished = viewModel::onSliderPositionChangeFinished,
                     onDone = viewModel::onSliderDone,
                 )
             } else {

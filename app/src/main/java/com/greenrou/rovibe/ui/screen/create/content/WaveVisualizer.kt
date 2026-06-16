@@ -7,7 +7,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -18,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.sin
 
-private val WaveBackground = Color(0xFF0D1117)
 private val WaveColor = CommandColors["wave"] ?: Color(0xFF39D2C0)
 
 @Composable
@@ -37,7 +35,7 @@ fun WaveVisualizer(amplitude: Float, modifier: Modifier = Modifier) {
         label = "wavePhaseAnim",
     )
 
-    Canvas(modifier = modifier.background(WaveBackground)) {
+    Canvas(modifier = modifier) {
         val midY = size.height / 2f
         val maxAmplitudePx = size.height / 2f * 0.85f
         val amplitudePx = (maxAmplitudePx * animatedAmplitude).coerceAtLeast(1.5f)

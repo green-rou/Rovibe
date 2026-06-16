@@ -22,6 +22,8 @@ import java.util.UUID
 import kotlin.math.roundToInt
 
 private val WaveAnchorRegex = Regex("""(?i)\bwave\s*\(\s*\)""")
+private val BarsAnchorRegex = Regex("""(?i)\bbars\s*\(\s*\)""")
+private val PianoAnchorRegex = Regex("""(?i)\bpiano\s*\(([^)]*)\)""")
 
 class CreateViewModel(
     private val repository: SoundRepository,
@@ -35,7 +37,10 @@ class CreateViewModel(
         CreateState(
             input = TextFieldValue(editingItem?.content ?: ""),
             title = editingItem?.name,
-            waveAnchorOffset = findWaveAnchorOffset(editingItem?.content ?: ""),
+            waveAnchorOffset = findAnchorOffset(editingItem?.content ?: "", WaveAnchorRegex),
+            barsAnchorOffset = findAnchorOffset(editingItem?.content ?: "", BarsAnchorRegex),
+            pianoAnchorOffset = findAnchorOffset(editingItem?.content ?: "", PianoAnchorRegex),
+            pianoNotes = findPianoNotes(editingItem?.content ?: ""),
         )
     )
 
@@ -56,7 +61,10 @@ class CreateViewModel(
                 suggestions = suggestionsFor(input),
                 parameterHint = hint,
                 sliderEdit = resolveSliderEdit(input, hint),
-                waveAnchorOffset = findWaveAnchorOffset(input.text),
+                waveAnchorOffset = findAnchorOffset(input.text, WaveAnchorRegex),
+                barsAnchorOffset = findAnchorOffset(input.text, BarsAnchorRegex),
+                pianoAnchorOffset = findAnchorOffset(input.text, PianoAnchorRegex),
+                pianoNotes = findPianoNotes(input.text),
             )
         }
     }
@@ -70,7 +78,10 @@ class CreateViewModel(
                 suggestions = emptyList(),
                 parameterHint = hint,
                 sliderEdit = resolveSliderEdit(newInput, hint),
-                waveAnchorOffset = findWaveAnchorOffset(newInput.text),
+                waveAnchorOffset = findAnchorOffset(newInput.text, WaveAnchorRegex),
+                barsAnchorOffset = findAnchorOffset(newInput.text, BarsAnchorRegex),
+                pianoAnchorOffset = findAnchorOffset(newInput.text, PianoAnchorRegex),
+                pianoNotes = findPianoNotes(newInput.text),
             )
         }
     }
@@ -81,10 +92,11 @@ class CreateViewModel(
             val current = state.sliderEdit ?: return@update state
             val clamped = position.coerceIn(0f, 1f)
             val valueText = formatSliderValue(clamped)
+            val replacement = "slider($valueText)"
             val text = state.input.text
             val range = current.range
-            val newText = text.substring(0, range.start) + valueText + text.substring(range.end)
-            val newRange = TextRange(range.start, range.start + valueText.length)
+            val newText = text.substring(0, range.start) + replacement + text.substring(range.end)
+            val newRange = TextRange(range.start, range.start + replacement.length)
             state.copy(
                 input = TextFieldValue(newText, selection = TextRange(newRange.end)),
                 sliderEdit = current.copy(range = newRange, position = clamped, valueText = valueText),
@@ -94,7 +106,12 @@ class CreateViewModel(
         }
     }
 
+    fun onSliderPositionChangeFinished() {
+        soundCommandRepository.play(_state.value.input.text)
+    }
+
     fun onSliderDone() {
+        val text = _state.value.input.text
         _state.update {
             it.copy(
                 sliderEdit = null,
@@ -102,6 +119,7 @@ class CreateViewModel(
                 parameterHint = parameterHintFor(it.input),
             )
         }
+        soundCommandRepository.play(text)
     }
 
     private fun stopPlaybackIfNeeded() {
@@ -144,19 +162,14 @@ class CreateViewModel(
 
     private fun suggestionsFor(value: TextFieldValue): List<SoundCommandSpec> {
         if (value.selection.start != value.selection.end) return emptyList()
+        val cursor = value.selection.start
+        val lineStart = value.text.lastIndexOf('\n', cursor - 1).let { if (it == -1) 0 else it + 1 }
+        if (value.text.substring(lineStart).trimStart().startsWith("#")) return emptyList()
         return SoundCommandSpecs.matching(currentWord(value))
     }
 
     private fun parameterHintFor(value: TextFieldValue): SoundCommandSpec? =
         findEnclosingCommand(value)?.spec
-
-    private fun sliderRangeFor(value: TextFieldValue): TextRange? {
-        val enclosing = findEnclosingCommand(value) ?: return null
-        if (!enclosing.spec.name.equals("slider", ignoreCase = true)) return null
-        val closeParen = value.text.indexOf(')', enclosing.openParen + 1)
-        if (closeParen < 0) return null
-        return TextRange(enclosing.nameStart, closeParen + 1)
-    }
 
     private fun findEnclosingCommand(value: TextFieldValue): EnclosingCommand? {
         val text = value.text
@@ -169,7 +182,7 @@ class CreateViewModel(
                 '(' -> {
                     if (depth == 0) {
                         var nameStart = index
-                        while (nameStart > 0 && text[nameStart - 1].isLetter()) nameStart--
+                        while (nameStart > 0 && isWordChar(text[nameStart - 1])) nameStart--
                         val name = text.substring(nameStart, index)
                         val spec = SoundCommandSpecs.ALL.find { it.name.equals(name, ignoreCase = true) }
                             ?: return null
@@ -185,14 +198,36 @@ class CreateViewModel(
 
     private fun resolveSliderEdit(value: TextFieldValue, hint: SoundCommandSpec?): SliderEdit? {
         if (hint == null || !hint.name.equals("slider", ignoreCase = true)) return null
-        val range = sliderRangeFor(value) ?: return null
-        return SliderEdit(range, 0f, formatSliderValue(0f))
+        val enclosing = findEnclosingCommand(value) ?: return null
+        val closeParen = value.text.indexOf(')', enclosing.openParen + 1)
+        if (closeParen < 0) return null
+        val range = TextRange(enclosing.nameStart, closeParen + 1)
+        val existingValue = value.text.substring(enclosing.openParen + 1, closeParen)
+        val position = positionForSliderValue(existingValue)
+        return SliderEdit(range, position, formatSliderValue(position))
     }
 
-    private fun findWaveAnchorOffset(text: String): Int? {
-        val match = WaveAnchorRegex.find(text) ?: return null
-        val lineEnd = text.indexOf('\n', match.range.last)
-        return if (lineEnd == -1) text.length else lineEnd
+    private fun findAnchorOffset(text: String, regex: Regex): Int? {
+        for (match in regex.findAll(text)) {
+            val lineStart = text.lastIndexOf('\n', match.range.first).let { if (it == -1) 0 else it + 1 }
+            if (!text.substring(lineStart).trimStart().startsWith("#")) {
+                val lineEnd = text.indexOf('\n', match.range.last)
+                return if (lineEnd == -1) text.length else lineEnd
+            }
+        }
+        return null
+    }
+
+    private fun findPianoNotes(text: String): List<Int> {
+        for (match in PianoAnchorRegex.findAll(text)) {
+            val lineStart = text.lastIndexOf('\n', match.range.first).let { if (it == -1) 0 else it + 1 }
+            if (!text.substring(lineStart).trimStart().startsWith("#")) {
+                return match.groupValues[1].trim().split(Regex("\\s+"))
+                    .filter { it.isNotEmpty() }
+                    .map { it.toIntOrNull() ?: 0 }
+            }
+        }
+        return emptyList()
     }
 
     private fun formatSliderValue(position: Float): String {
@@ -201,6 +236,15 @@ class CreateViewModel(
             String.format(Locale.US, "%.1f", clamped * 2f)
         } else {
             (1 + (clamped - 0.5f) * 2f * 99f).roundToInt().toString()
+        }
+    }
+
+    private fun positionForSliderValue(text: String): Float {
+        val value = text.toFloatOrNull() ?: return 0f
+        return if (text.contains('.')) {
+            (value / 2f).coerceIn(0f, 0.5f)
+        } else {
+            (0.5f + (value - 1f) / 198f).coerceIn(0.5f, 1f)
         }
     }
 
@@ -222,9 +266,11 @@ class CreateViewModel(
 
     private fun wordStart(text: String, cursor: Int): Int {
         var index = cursor
-        while (index > 0 && text[index - 1].isLetter()) index--
+        while (index > 0 && isWordChar(text[index - 1])) index--
         return index
     }
+
+    private fun isWordChar(c: Char): Boolean = c.isLetter() || c == '_'
 }
 
 private data class EnclosingCommand(

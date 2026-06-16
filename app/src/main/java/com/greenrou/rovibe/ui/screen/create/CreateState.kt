@@ -15,6 +15,9 @@ data class CreateState(
     val sliderEdit: SliderEdit? = null,
     val amplitude: Float = 0f,
     val waveAnchorOffset: Int? = null,
+    val barsAnchorOffset: Int? = null,
+    val pianoAnchorOffset: Int? = null,
+    val pianoNotes: List<Int> = emptyList(),
 )
 
 data class SliderEdit(

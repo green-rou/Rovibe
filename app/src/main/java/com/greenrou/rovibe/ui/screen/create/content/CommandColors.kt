@@ -19,6 +19,10 @@ internal val CommandColors: Map<String, Color> = mapOf(
     "loop" to Color(0xFF85E0A3),
     "repeat" to Color(0xFF9ECBFF),
     "reverse" to Color(0xFFF47067),
+    "after" to Color(0xFFE3B341),
+    "after_all" to Color(0xFFC9A0FF),
     "slider" to Color(0xFF58A6FF),
     "wave" to Color(0xFF39D2C0),
+    "bars" to Color(0xFF5EEAD4),
+    "piano" to Color(0xFFB388FF),
 )

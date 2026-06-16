@@ -24,8 +24,12 @@ object SoundCommandSpecs {
         SoundCommandSpec("loop", "loop(0.5s, 10times)", "Повторити з паузою між разами"),
         SoundCommandSpec("repeat", "repeat(5times)", "Повторити без паузи"),
         SoundCommandSpec("reverse", "reverse()", "Відтворити звук у зворотному напрямку"),
+        SoundCommandSpec("after", "after()", "Наступні команди почнуться після завершення команди вище"),
+        SoundCommandSpec("after_all", "after_all()", "Наступні команди почнуться після завершення всіх команд вище"),
         SoundCommandSpec("slider", "slider()", "Повзунок для вибору числового значення"),
         SoundCommandSpec("wave", "wave()", "Візуалізація хвилі на 3 рядки нижче"),
+        SoundCommandSpec("bars", "bars()", "Стовпчаста візуалізація на 3 рядки нижче"),
+        SoundCommandSpec("piano", "piano(1 5 8 12)", "Ноти піано-ролу від 1 до 52, через пробіл"),
     )
 
     fun matching(prefix: String): List<SoundCommandSpec> =

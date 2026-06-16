@@ -29,6 +29,7 @@ fun CreateSliderBar(
     position: Float,
     value: String,
     onPositionChange: (Float) -> Unit,
+    onPositionChangeFinished: () -> Unit = {},
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -42,6 +43,7 @@ fun CreateSliderBar(
         Slider(
             value = position,
             onValueChange = onPositionChange,
+            onValueChangeFinished = onPositionChangeFinished,
             modifier = Modifier.weight(1f),
         )
         Text(

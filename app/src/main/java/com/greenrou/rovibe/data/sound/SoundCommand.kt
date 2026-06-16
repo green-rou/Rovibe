@@ -10,6 +10,7 @@ sealed interface SoundCommand {
     data class Clap(val pattern: List<Boolean>) : SoundCommand
     data class Tom(val pattern: List<Boolean>) : SoundCommand
     data class Crash(val pattern: List<Boolean>) : SoundCommand
+    data class Piano(val notes: List<Int>) : SoundCommand
     data class Square(val frequencyHz: Float, val durationMs: Long) : SoundCommand
     data class Noise(val durationMs: Long) : SoundCommand
     data class Volume(val level: Float) : SoundCommand
@@ -19,4 +20,6 @@ sealed interface SoundCommand {
     data class WithVolume(val command: SoundCommand, val level: Float) : SoundCommand
     data class WithTempo(val command: SoundCommand, val bpm: Int) : SoundCommand
     data class Reverse(val command: SoundCommand) : SoundCommand
+    data object After : SoundCommand
+    data object AfterAll : SoundCommand
 }
