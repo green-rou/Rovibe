@@ -14,14 +14,20 @@ data class CreateState(
     val playbackState: PlaybackState = PlaybackState.STOPPED,
     val sliderEdit: SliderEdit? = null,
     val amplitude: Float = 0f,
-    val waveAnchorOffset: Int? = null,
-    val barsAnchorOffset: Int? = null,
-    val pianoAnchorOffset: Int? = null,
-    val pianoNotes: List<Int> = emptyList(),
+    val spectrumBands: FloatArray = FloatArray(24),
+    val waveAnchorOffsets: List<Int> = emptyList(),
+    val barsAnchorOffsets: List<Int> = emptyList(),
+    val pianoVisualizers: List<PianoVisualizer> = emptyList(),
 )
 
 data class SliderEdit(
     val range: TextRange,
     val position: Float,
     val valueText: String,
+)
+
+data class PianoVisualizer(
+    val anchorOffset: Int,
+    val notes: List<Int>,
+    val tempo: Int = 120,
 )

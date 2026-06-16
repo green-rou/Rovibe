@@ -6,8 +6,31 @@ private val SLIDER_REGEX = Regex("""(?i)\bslider\(([^()]*)\)""")
 object SoundCommandParser {
 
     fun parseScript(script: String): List<SoundCommand> {
+        val rawLines = script.lines()
+        val hasSolo = rawLines.any { it.trimStart().startsWith("!") }
+
+        val lines: List<String> = if (!hasSolo) {
+            rawLines
+        } else {
+            val selected = mutableListOf<String>()
+            var takingModifiers = false
+            for (line in rawLines) {
+                val trimmed = line.trimStart()
+                when {
+                    trimmed.startsWith("!") -> {
+                        selected.add(trimmed.removePrefix("!"))
+                        takingModifiers = true
+                    }
+                    trimmed.startsWith(".") && takingModifiers -> selected.add(line)
+                    trimmed.isEmpty() || trimmed.startsWith("#") -> {}
+                    else -> takingModifiers = false
+                }
+            }
+            selected
+        }
+
         val commands = mutableListOf<SoundCommand>()
-        for (line in script.lines()) {
+        for (line in lines) {
             val trimmed = line.trim()
             when {
                 trimmed.startsWith("#") -> {}

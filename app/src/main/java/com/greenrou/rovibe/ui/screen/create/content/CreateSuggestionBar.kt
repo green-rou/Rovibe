@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.greenrou.rovibe.data.sound.SoundCommandSpec
@@ -70,7 +71,7 @@ private fun SuggestionChip(spec: SoundCommandSpec, onClick: () -> Unit) {
             fontSize = 13.sp,
         )
         Text(
-            text = spec.description,
+            text = stringResource(spec.descriptionRes),
             color = DescriptionColor,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,
@@ -93,7 +94,7 @@ private fun HintChip(spec: SoundCommandSpec) {
             fontSize = 13.sp,
         )
         Text(
-            text = spec.description,
+            text = stringResource(spec.descriptionRes),
             color = DescriptionColor,
             fontFamily = FontFamily.Monospace,
             fontSize = 11.sp,

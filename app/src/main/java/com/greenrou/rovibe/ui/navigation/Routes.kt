@@ -1,7 +1,10 @@
 package com.greenrou.rovibe.ui.navigation
 
 object Routes {
-    const val HOME = "home"
+    const val SOUNDS = "sounds"
+    const val COMPOSITIONS = "compositions"
+    const val SETTINGS = "settings"
+
     const val ITEM_ID_ARG = "itemId"
     const val CREATE = "create"
     const val CREATE_PATTERN = "create?itemId={itemId}"

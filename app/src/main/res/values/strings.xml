@@ -1,18 +1,62 @@
 <resources>
     <string name="app_name">Rovibe</string>
     <string name="home_title">Rovibe</string>
-    <string name="add_record">Додати запис</string>
-    <string name="empty_state_title">Поки немає записів</string>
-    <string name="empty_state_subtitle">Натисніть «+», щоб створити перший запис</string>
-    <string name="create_title">Новий запис</string>
-    <string name="new_record_label">Новий запис</string>
-    <string name="save">Зберегти</string>
-    <string name="back">Назад</string>
-    <string name="play">Відтворити</string>
-    <string name="pause">Пауза</string>
-    <string name="stop">Зупинити</string>
-    <string name="rename">Перейменувати</string>
-    <string name="rename_title">Перейменувати запис</string>
-    <string name="cancel">Скасувати</string>
-    <string name="done">Готово</string>
+    <string name="add_record">Add record</string>
+    <string name="empty_state_title">No records yet</string>
+    <string name="empty_state_subtitle">Tap «+» to create your first record</string>
+    <string name="create_title">New record</string>
+    <string name="new_record_label">New record</string>
+    <string name="save">Save</string>
+    <string name="back">Back</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stop</string>
+    <string name="rename">Rename</string>
+    <string name="snackbar_deleted">«%s» deleted</string>
+    <string name="snackbar_restore">Restore</string>
+    <string name="rename_title">Rename record</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
+
+    <!-- Navigation tabs -->
+    <string name="tab_sounds">Sounds</string>
+    <string name="tab_compositions">Compositions</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Compositions screen -->
+    <string name="compositions_coming_soon">Coming soon</string>
+
+    <!-- Settings screen -->
+    <string name="settings_language">Language</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme_coming_soon">Theme — coming soon</string>
+    <string name="settings_commands">Commands</string>
+    <string name="settings_about">About</string>
+    <string name="lang_english">English</string>
+    <string name="lang_ukrainian">Українська</string>
+    <string name="about_description">A terminal-style sound scripting app for Android.</string>
+
+    <!-- Command descriptions -->
+    <string name="cmd_play_desc">Sine wave at the given frequency and duration</string>
+    <string name="cmd_pause_desc">Silence for the given duration</string>
+    <string name="cmd_bit_desc">Kick pattern: 1 = hit at 1000 Hz, 0 = rest</string>
+    <string name="cmd_bass_desc">Bass drum pattern: 1 = hit at 60 Hz, 0 = rest</string>
+    <string name="cmd_snare_desc">Snare pattern: 1 = noise hit, 0 = rest</string>
+    <string name="cmd_hihat_desc">Hi-hat pattern: 1 = short noise hit, 0 = rest</string>
+    <string name="cmd_clap_desc">Clap pattern: 1 = noise burst, 0 = rest</string>
+    <string name="cmd_tom_desc">Tom pattern: 1 = hit at 110 Hz, 0 = rest</string>
+    <string name="cmd_crash_desc">Crash pattern: 1 = long noise burst, 0 = rest</string>
+    <string name="cmd_square_desc">Square wave at the given frequency and duration</string>
+    <string name="cmd_noise_desc">White noise for the given duration</string>
+    <string name="cmd_volume_desc">Volume: 0.0–1.0 to attenuate, 1–100 to amplify</string>
+    <string name="cmd_tempo_desc">Tempo in BPM, applies to all subsequent commands</string>
+    <string name="cmd_loop_desc">Repeat with a gap between iterations</string>
+    <string name="cmd_repeat_desc">Repeat immediately, back to back</string>
+    <string name="cmd_reverse_desc">Reverse the rendered audio buffer</string>
+    <string name="cmd_after_desc">Next command starts after the command above finishes</string>
+    <string name="cmd_after_all_desc">All commands below start after every command above finishes</string>
+    <string name="cmd_slider_desc">Live drag slider for a numeric argument</string>
+    <string name="cmd_wave_desc">Animated waveform visualizer, spans 3 lines</string>
+    <string name="cmd_bars_desc">Frequency spectrum bar visualizer, spans 3 lines</string>
+    <string name="cmd_piano_desc">Piano roll: note numbers 1–52 (C3–E7), space-separated</string>
 </resources>

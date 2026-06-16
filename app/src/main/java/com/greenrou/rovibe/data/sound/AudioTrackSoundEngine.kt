@@ -16,7 +16,11 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.ln
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 private const val BIT_FREQUENCY_HZ = 1000f
@@ -34,12 +38,21 @@ private const val DEFAULT_TEMPO_BPM = 120
 private const val AMPLITUDE_WINDOW_SAMPLES = 256
 private const val AMPLITUDE_POLL_MS = 16L
 private const val WRITE_CHUNK_BYTES = 4096
+private const val FFT_SIZE = 2048
+private const val BAND_COUNT = 24
+private const val BAND_FREQ_MIN = 20f
+private const val BAND_FREQ_MAX = 20000f
+private const val BAND_ATTACK = 0.6f
+private const val BAND_RELEASE = 0.12f
+private const val BAND_GAIN = 2f
 
 class AudioTrackSoundEngine : SoundEngine {
 
     private var audioTrack: AudioTrack? = null
     private var playbackGeneration = 0
     private var renderedSamples: ShortArray = ShortArray(0)
+    private var renderedBytes: ByteArray = ByteArray(0)
+    @Volatile private var writerOffset: Int = 0
     private var amplitudeJob: Job? = null
     private var writerJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -49,6 +62,10 @@ class AudioTrackSoundEngine : SoundEngine {
 
     private val _amplitude = MutableStateFlow(0f)
     override val amplitude: StateFlow<Float> = _amplitude.asStateFlow()
+
+    private val _spectrumBands = MutableStateFlow(FloatArray(BAND_COUNT))
+    override val spectrumBands: StateFlow<FloatArray> = _spectrumBands.asStateFlow()
+    private val smoothedBands = FloatArray(BAND_COUNT)
 
     override fun play(commands: List<SoundCommand>) {
         stop()
@@ -84,6 +101,8 @@ class AudioTrackSoundEngine : SoundEngine {
             AudioManager.AUDIO_SESSION_ID_GENERATE,
         )
         audioTrack = track
+        renderedBytes = bytes
+        writerOffset = 0
         track.setNotificationMarkerPosition(samples.size)
         track.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
             override fun onMarkerReached(track: AudioTrack) {
@@ -106,6 +125,8 @@ class AudioTrackSoundEngine : SoundEngine {
         track.pause()
         _playbackState.value = PlaybackState.PAUSED
         _amplitude.value = 0f
+        _spectrumBands.value = FloatArray(BAND_COUNT)
+        smoothedBands.fill(0f)
     }
 
     override fun resume() {
@@ -113,6 +134,13 @@ class AudioTrackSoundEngine : SoundEngine {
         if (_playbackState.value != PlaybackState.PAUSED) return
         track.play()
         _playbackState.value = PlaybackState.PLAYING
+        if (amplitudeJob?.isActive != true) {
+            startAmplitudePolling(playbackGeneration)
+        }
+        // Restart writer if it exited early (e.g. write() returned 0 on paused buffer)
+        if (writerJob?.isActive != true && writerOffset < renderedBytes.size) {
+            startWriter(track, renderedBytes, playbackGeneration)
+        }
     }
 
     override fun stop() {
@@ -126,20 +154,24 @@ class AudioTrackSoundEngine : SoundEngine {
         track?.release()
         _playbackState.value = PlaybackState.STOPPED
         _amplitude.value = 0f
+        _spectrumBands.value = FloatArray(BAND_COUNT)
+        smoothedBands.fill(0f)
     }
 
     private fun startWriter(track: AudioTrack, bytes: ByteArray, generation: Int) {
         writerJob = scope.launch(Dispatchers.IO) {
-            var offset = 0
-            while (isActive && generation == playbackGeneration && offset < bytes.size) {
-                val chunk = (bytes.size - offset).coerceAtMost(WRITE_CHUNK_BYTES)
+            while (isActive && generation == playbackGeneration && writerOffset < bytes.size) {
+                val chunk = (bytes.size - writerOffset).coerceAtMost(WRITE_CHUNK_BYTES)
                 val written = try {
-                    track.write(bytes, offset, chunk)
+                    track.write(bytes, writerOffset, chunk)
                 } catch (e: IllegalStateException) {
                     break
                 }
-                if (written <= 0) break
-                offset += written
+                when {
+                    written > 0 -> writerOffset += written
+                    written == 0 -> delay(1)   // buffer full (track paused), yield and retry
+                    else -> break              // real error (negative code)
+                }
             }
         }
     }
@@ -151,14 +183,17 @@ class AudioTrackSoundEngine : SoundEngine {
                 if (track == null || _playbackState.value == PlaybackState.STOPPED) {
                     break
                 }
-                _amplitude.value = if (_playbackState.value == PlaybackState.PLAYING) {
-                    try {
-                        sampleAmplitude(track.playbackHeadPosition)
-                    } catch (e: IllegalStateException) {
+                if (_playbackState.value == PlaybackState.PLAYING) {
+                    val pos = try { track.playbackHeadPosition } catch (e: IllegalStateException) { break }
+                    // Fallback: detect end-of-playback if onMarkerReached didn't fire
+                    if (renderedSamples.isNotEmpty() && pos >= renderedSamples.size) {
+                        if (generation == playbackGeneration) _playbackState.value = PlaybackState.STOPPED
                         break
                     }
+                    _amplitude.value = sampleAmplitude(pos)
+                    _spectrumBands.value = computeSpectrumBands(pos)
                 } else {
-                    0f
+                    _amplitude.value = 0f
                 }
                 delay(AMPLITUDE_POLL_MS)
             }
@@ -179,6 +214,82 @@ class AudioTrackSoundEngine : SoundEngine {
         }
         val rms = sqrt(sumSquares / (end - start))
         return rms.toFloat().coerceIn(0f, 1f)
+    }
+
+    private fun computeSpectrumBands(framePosition: Int): FloatArray {
+        val samples = renderedSamples
+        if (samples.isEmpty()) return FloatArray(BAND_COUNT)
+
+        val center = framePosition.coerceIn(0, samples.size)
+        val start = (center - FFT_SIZE / 2).coerceAtLeast(0)
+        val end = (start + FFT_SIZE).coerceAtMost(samples.size)
+        val windowSize = end - start
+
+        val real = FloatArray(FFT_SIZE)
+        val imag = FloatArray(FFT_SIZE)
+        for (i in 0 until windowSize) {
+            val s = samples[start + i] / Short.MAX_VALUE.toFloat()
+            val hann = 0.5f * (1f - cos(2.0 * PI * i / (windowSize - 1)).toFloat())
+            real[i] = s * hann
+        }
+
+        fft(real, imag)
+
+        val freqPerBin = WaveformGenerator.SAMPLE_RATE.toFloat() / FFT_SIZE
+        val logMin = ln(BAND_FREQ_MIN.toDouble())
+        val logRange = ln(BAND_FREQ_MAX.toDouble()) - logMin
+        val result = FloatArray(BAND_COUNT)
+        for (b in 0 until BAND_COUNT) {
+            val freqLow = Math.E.pow(logMin + logRange * b / BAND_COUNT).toFloat()
+            val freqHigh = Math.E.pow(logMin + logRange * (b + 1) / BAND_COUNT).toFloat()
+            val binLow = (freqLow / freqPerBin).toInt().coerceIn(1, FFT_SIZE / 2 - 1)
+            val binHigh = (freqHigh / freqPerBin).toInt().coerceIn(binLow + 1, FFT_SIZE / 2)
+            var sum = 0f
+            for (k in binLow until binHigh) {
+                sum += sqrt(real[k] * real[k] + imag[k] * imag[k]) / (FFT_SIZE / 2)
+            }
+            val raw = (sum / (binHigh - binLow) * BAND_GAIN).coerceIn(0f, 1f)
+            val alpha = if (raw > smoothedBands[b]) BAND_ATTACK else BAND_RELEASE
+            smoothedBands[b] = smoothedBands[b] + alpha * (raw - smoothedBands[b])
+            result[b] = smoothedBands[b]
+        }
+        return result
+    }
+
+    private fun fft(real: FloatArray, imag: FloatArray) {
+        val n = real.size
+        var j = 0
+        for (i in 1 until n) {
+            var bit = n shr 1
+            while (j and bit != 0) { j = j xor bit; bit = bit shr 1 }
+            j = j xor bit
+            if (i < j) {
+                var tmp = real[i]; real[i] = real[j]; real[j] = tmp
+                tmp = imag[i]; imag[i] = imag[j]; imag[j] = tmp
+            }
+        }
+        var len = 2
+        while (len <= n) {
+            val halfLen = len / 2
+            val ang = -2.0 * PI / len
+            val wRe = cos(ang).toFloat()
+            val wIm = sin(ang).toFloat()
+            var i = 0
+            while (i < n) {
+                var curRe = 1f; var curIm = 0f
+                for (k in 0 until halfLen) {
+                    val uRe = real[i + k]; val uIm = imag[i + k]
+                    val vRe = real[i + k + halfLen] * curRe - imag[i + k + halfLen] * curIm
+                    val vIm = real[i + k + halfLen] * curIm + imag[i + k + halfLen] * curRe
+                    real[i + k] = uRe + vRe; imag[i + k] = uIm + vIm
+                    real[i + k + halfLen] = uRe - vRe; imag[i + k + halfLen] = uIm - vIm
+                    val newCurRe = curRe * wRe - curIm * wIm
+                    curIm = curRe * wIm + curIm * wRe; curRe = newCurRe
+                }
+                i += len
+            }
+            len = len shl 1
+        }
     }
 
     private class EngineState {

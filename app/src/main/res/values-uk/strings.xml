@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">Rovibe</string>
+    <string name="home_title">Rovibe</string>
+    <string name="add_record">Додати запис</string>
+    <string name="empty_state_title">Поки немає записів</string>
+    <string name="empty_state_subtitle">Натисніть «+», щоб створити перший запис</string>
+    <string name="create_title">Новий запис</string>
+    <string name="new_record_label">Новий запис</string>
+    <string name="save">Зберегти</string>
+    <string name="back">Назад</string>
+    <string name="play">Відтворити</string>
+    <string name="pause">Пауза</string>
+    <string name="stop">Зупинити</string>
+    <string name="rename">Перейменувати</string>
+    <string name="snackbar_deleted">«%s» видалено</string>
+    <string name="snackbar_restore">Відновити</string>
+    <string name="rename_title">Перейменувати запис</string>
+    <string name="cancel">Скасувати</string>
+    <string name="done">Готово</string>
+
+    <!-- Вкладки навігації -->
+    <string name="tab_sounds">Звуки</string>
+    <string name="tab_compositions">Композиції</string>
+    <string name="tab_settings">Налаштування</string>
+
+    <!-- Екран композицій -->
+    <string name="compositions_coming_soon">Незабаром</string>
+
+    <!-- Налаштування -->
+    <string name="settings_language">Мова</string>
+    <string name="settings_appearance">Вигляд</string>
+    <string name="settings_theme_coming_soon">Тема — незабаром</string>
+    <string name="settings_commands">Команди</string>
+    <string name="settings_about">Про додаток</string>
+    <string name="lang_english">English</string>
+    <string name="lang_ukrainian">Українська</string>
+    <string name="about_description">Термінальний редактор звуку для Android.</string>
+
+    <!-- Описи команд -->
+    <string name="cmd_play_desc">Синусоїда заданої частоти та тривалості</string>
+    <string name="cmd_pause_desc">Тиша заданої тривалості</string>
+    <string name="cmd_bit_desc">Бітовий патерн: 1 — удар 1000 Гц, 0 — пауза</string>
+    <string name="cmd_bass_desc">Басовий патерн: 1 — удар 60 Гц, 0 — пауза</string>
+    <string name="cmd_snare_desc">Патерн снейру: 1 — шумовий удар, 0 — пауза</string>
+    <string name="cmd_hihat_desc">Патерн хай-хету: 1 — короткий удар, 0 — пауза</string>
+    <string name="cmd_clap_desc">Патерн хлопка: 1 — шумовий імпульс, 0 — пауза</string>
+    <string name="cmd_tom_desc">Патерн тома: 1 — удар 110 Гц, 0 — пауза</string>
+    <string name="cmd_crash_desc">Патерн крешу: 1 — тривалий шум, 0 — пауза</string>
+    <string name="cmd_square_desc">Квадратна хвиля заданої частоти та тривалості</string>
+    <string name="cmd_noise_desc">Білий шум заданої тривалості</string>
+    <string name="cmd_volume_desc">Гучність: 0.0–1.0 — затухання, 1–100 — підсилення</string>
+    <string name="cmd_tempo_desc">Темп у BPM для всіх наступних команд</string>
+    <string name="cmd_loop_desc">Повторити з паузою між повторами</string>
+    <string name="cmd_repeat_desc">Повторити одразу, без паузи</string>
+    <string name="cmd_reverse_desc">Відтворити аудіо у зворотному порядку</string>
+    <string name="cmd_after_desc">Наступна команда — після завершення команди вище</string>
+    <string name="cmd_after_all_desc">Команди нижче — після завершення всіх команд вище</string>
+    <string name="cmd_slider_desc">Повзунок для числового аргументу в редакторі</string>
+    <string name="cmd_wave_desc">Анімована синусоїда-візуалізатор, 3 рядки</string>
+    <string name="cmd_bars_desc">Частотний спектр стовпців, 3 рядки</string>
+    <string name="cmd_piano_desc">Піано-рол: номери нот 1–52 (C3–E7), через пробіл</string>
+</resources>
