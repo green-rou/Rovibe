@@ -1,21 +1,24 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
 
 val keystorePropsFile = rootProject.file("keystore.properties")
-val keystoreProps = if (keystorePropsFile.exists()) {
-    java.util.Properties().also { it.load(keystorePropsFile.inputStream()) }
-} else null
+val keystoreProps: Properties? = if (keystorePropsFile.exists()) {
+    Properties().apply { load(keystorePropsFile.inputStream()) }
+} else {
+    null
+}
 
-val keystoreFile = keystoreProps?.getProperty("store")
-    ?.let { rootProject.file(it) }
-    ?: file("rovibe.jks") // CI: decoded to app/rovibe.jks by workflow
+val storePasswordVal: String? = keystoreProps?.getProperty("storePassword") ?: System.getenv("STORE_PASSWORD")
+val keyAliasVal: String? = keystoreProps?.getProperty("alias") ?: System.getenv("KEY_ALIAS")
+val keyPasswordVal: String? = keystoreProps?.getProperty("aliasPassword") ?: System.getenv("KEY_PASSWORD")
 
-val storePasswordVal = keystoreProps?.getProperty("storePassword") ?: System.getenv("STORE_PASSWORD")
-val keyAliasVal = keystoreProps?.getProperty("alias") ?: System.getenv("KEY_ALIAS")
-val keyPasswordVal = keystoreProps?.getProperty("aliasPassword") ?: System.getenv("KEY_PASSWORD")
-val canSign = keystoreFile.exists() && storePasswordVal != null && keyAliasVal != null && keyPasswordVal != null
+val keystoreStorePath: String? = keystoreProps?.getProperty("store")
+val keystoreFile: File = if (keystoreStorePath != null) rootProject.file(keystoreStorePath) else file("rovibe.jks")
+val canSign: Boolean = keystoreFile.exists() && storePasswordVal != null && keyAliasVal != null && keyPasswordVal != null
 
 android {
     namespace = "com.greenrou.rovibe"
