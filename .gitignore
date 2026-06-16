@@ -10,6 +10,8 @@ out/
 *.ap_
 *.dex
 *.class
+app/debug/
+app/release/
 
 # Локальна конфігурація (шлях до SDK тощо)
 local.properties

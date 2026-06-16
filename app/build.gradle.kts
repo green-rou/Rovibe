@@ -3,6 +3,20 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = if (keystorePropsFile.exists()) {
+    java.util.Properties().also { it.load(keystorePropsFile.inputStream()) }
+} else null
+
+val keystoreFile = keystoreProps?.getProperty("store")
+    ?.let { rootProject.file(it) }
+    ?: file("rovibe.jks") // CI: decoded to app/rovibe.jks by workflow
+
+val storePasswordVal = keystoreProps?.getProperty("storePassword") ?: System.getenv("STORE_PASSWORD")
+val keyAliasVal = keystoreProps?.getProperty("alias") ?: System.getenv("KEY_ALIAS")
+val keyPasswordVal = keystoreProps?.getProperty("aliasPassword") ?: System.getenv("KEY_PASSWORD")
+val canSign = keystoreFile.exists() && storePasswordVal != null && keyAliasVal != null && keyPasswordVal != null
+
 android {
     namespace = "com.greenrou.rovibe"
     compileSdk {
@@ -19,8 +33,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    if (canSign) {
+        signingConfigs {
+            create("release") {
+                storeFile = keystoreFile
+                storePassword = storePasswordVal
+                keyAlias = keyAliasVal
+                keyPassword = keyPasswordVal
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (canSign) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
