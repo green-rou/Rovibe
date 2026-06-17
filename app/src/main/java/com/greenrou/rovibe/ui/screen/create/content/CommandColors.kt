@@ -25,4 +25,9 @@ internal val CommandColors: Map<String, Color> = mapOf(
     "wave" to Color(0xFF39D2C0),
     "bars" to Color(0xFF5EEAD4),
     "piano" to Color(0xFFB388FF),
+    "voice" to Color(0xFFFF6B6B),
+    "pitch" to Color(0xFFE0A0FF),
+    "speed" to Color(0xFFFFB86C),
+    "fadein" to Color(0xFF6DFFB0),
+    "fadeout" to Color(0xFFFF7EB3),
 )

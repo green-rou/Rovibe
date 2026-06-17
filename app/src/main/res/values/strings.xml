@@ -17,6 +17,8 @@
     <string name="rename_title">Rename record</string>
     <string name="cancel">Cancel</string>
     <string name="done">Done</string>
+    <string name="voice_record">Record</string>
+    <string name="voice_delete">Delete recording</string>
 
     <!-- Navigation tabs -->
     <string name="tab_sounds">Sounds</string>
@@ -35,6 +37,8 @@
     <string name="lang_english">English</string>
     <string name="lang_ukrainian">Українська</string>
     <string name="about_description">A terminal-style sound scripting app for Android.</string>
+    <string name="settings_github">GitHub</string>
+    <string name="settings_support">Support on Ko-fi</string>
 
     <!-- Compositions screen -->
     <string name="compositions_empty_title">No compositions yet</string>
@@ -65,9 +69,14 @@
     <string name="cmd_loop_desc">Repeat with a gap between iterations</string>
     <string name="cmd_repeat_desc">Repeat immediately, back to back</string>
     <string name="cmd_reverse_desc">Reverse the rendered audio buffer</string>
+    <string name="cmd_pitch_desc">Shift pitch (2.0 = octave up, 0.5 = octave down)</string>
+    <string name="cmd_speed_desc">Change speed and pitch (2.0 = 2× faster)</string>
+    <string name="cmd_fadein_desc">Fade in from silence over the given duration</string>
+    <string name="cmd_fadeout_desc">Fade out to silence over the given duration</string>
     <string name="cmd_after_desc">Next command starts after the command above finishes</string>
     <string name="cmd_after_all_desc">All commands below start after every command above finishes</string>
     <string name="cmd_slider_desc">Live drag slider for a numeric argument</string>
+    <string name="cmd_voice_desc">Record audio from the microphone</string>
     <string name="cmd_wave_desc">Animated waveform visualizer, spans 3 lines</string>
     <string name="cmd_bars_desc">Frequency spectrum bar visualizer, spans 3 lines</string>
     <string name="cmd_piano_desc">Piano roll: note numbers 1–52 (C3–E7), space-separated</string>

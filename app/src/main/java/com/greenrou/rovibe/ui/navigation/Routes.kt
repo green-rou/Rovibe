@@ -1,6 +1,9 @@
 package com.greenrou.rovibe.ui.navigation
 
 object Routes {
+    const val SOUNDS_GRAPH = "sounds_graph"
+    const val COMPOSITIONS_GRAPH = "compositions_graph"
+
     const val SOUNDS = "sounds"
     const val COMPOSITIONS = "compositions"
     const val SETTINGS = "settings"

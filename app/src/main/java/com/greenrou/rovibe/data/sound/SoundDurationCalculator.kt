@@ -69,6 +69,7 @@ object SoundDurationCalculator {
         is SoundCommand.Tempo      -> { state.tempo = cmd.bpm; 0L }
         is SoundCommand.After      -> 0L
         is SoundCommand.AfterAll   -> 0L
+        is SoundCommand.Voice      -> 0L
         is SoundCommand.Loop       -> {
             val base = renderDurationMs(cmd.command, state)
             base * cmd.times + cmd.intervalMs * (cmd.times - 1)
@@ -85,6 +86,10 @@ object SoundDurationCalculator {
             state.tempo = prev; result
         }
         is SoundCommand.Reverse    -> renderDurationMs(cmd.command, state)
+        is SoundCommand.WithPitch  -> renderDurationMs(cmd.command, state)
+        is SoundCommand.WithSpeed  -> (renderDurationMs(cmd.command, state) / cmd.factor.coerceAtLeast(0.01f)).toLong()
+        is SoundCommand.WithFadeIn -> renderDurationMs(cmd.command, state)
+        is SoundCommand.WithFadeOut -> renderDurationMs(cmd.command, state)
     }
 
     private fun stepMs(bpm: Int): Long =

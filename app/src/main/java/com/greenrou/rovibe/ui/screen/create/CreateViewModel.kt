@@ -10,12 +10,17 @@ import com.greenrou.rovibe.data.sound.PlaybackState
 import com.greenrou.rovibe.data.sound.SoundCommandRepository
 import com.greenrou.rovibe.data.sound.SoundCommandSpec
 import com.greenrou.rovibe.data.sound.SoundCommandSpecs
+import com.greenrou.rovibe.data.sound.VoiceRecorder
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.util.Locale
 import java.util.UUID
@@ -30,6 +35,7 @@ private val TempoModifierRegex = Regex("""(?i)\.tempo\s*\((\d+)\)""")
 class CreateViewModel(
     private val repository: SoundRepository,
     private val soundCommandRepository: SoundCommandRepository,
+    private val voiceRecorder: VoiceRecorder,
     itemId: String? = null,
 ) : ViewModel() {
 
@@ -44,6 +50,11 @@ class CreateViewModel(
             pianoVisualizers = findPianoVisualizers(editingItem?.content ?: ""),
         )
     )
+
+    private val _requestPermission = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val requestPermission = _requestPermission.asSharedFlow()
+
+    private var voiceElapsedJob: Job? = null
 
     val state: StateFlow<CreateState> = combine(
         _state,
@@ -63,6 +74,7 @@ class CreateViewModel(
                 suggestions = suggestionsFor(input),
                 parameterHint = hint,
                 sliderEdit = resolveSliderEdit(input, hint),
+                voiceEdit = resolveVoiceEdit(input, hint),
                 waveAnchorOffsets = findAllAnchorOffsets(input.text, WaveAnchorRegex),
                 barsAnchorOffsets = findAllAnchorOffsets(input.text, BarsAnchorRegex),
                 pianoVisualizers = findPianoVisualizers(input.text),
@@ -79,6 +91,7 @@ class CreateViewModel(
                 suggestions = emptyList(),
                 parameterHint = hint,
                 sliderEdit = resolveSliderEdit(newInput, hint),
+                voiceEdit = resolveVoiceEdit(newInput, hint),
                 waveAnchorOffsets = findAllAnchorOffsets(newInput.text, WaveAnchorRegex),
                 barsAnchorOffsets = findAllAnchorOffsets(newInput.text, BarsAnchorRegex),
                 pianoVisualizers = findPianoVisualizers(newInput.text),
@@ -125,6 +138,91 @@ class CreateViewModel(
         soundCommandRepository.play(text)
     }
 
+    fun onVoiceToggleRecord() {
+        if (voiceRecorder.isRecording.value) {
+            onVoiceRecordStop()
+        } else {
+            _requestPermission.tryEmit(Unit)
+        }
+    }
+
+    fun onVoicePermissionResult(granted: Boolean) {
+        if (!granted) return
+        onVoiceRecordStart()
+    }
+
+    private fun onVoiceRecordStart() {
+        stopPlaybackIfNeeded()
+        val oldId = _state.value.voiceEdit?.id
+        if (!oldId.isNullOrEmpty()) voiceRecorder.delete(oldId)
+        val id = "rec_${System.currentTimeMillis()}"
+        voiceRecorder.start(id)
+
+        _state.update { state ->
+            val voice = state.voiceEdit ?: return@update state
+            val replacement = "voice($id)"
+            val text = state.input.text
+            val newText = text.substring(0, voice.range.start) + replacement + text.substring(voice.range.end)
+            val newRange = TextRange(voice.range.start, voice.range.start + replacement.length)
+            state.copy(
+                input = TextFieldValue(newText, selection = TextRange(newRange.end)),
+                voiceEdit = voice.copy(range = newRange, id = id, isRecording = true),
+            )
+        }
+
+        voiceElapsedJob?.cancel()
+        voiceElapsedJob = viewModelScope.launch {
+            voiceRecorder.elapsedMs.collect { ms ->
+                _state.update { state ->
+                    val voice = state.voiceEdit ?: return@update state
+                    state.copy(voiceEdit = voice.copy(elapsedMs = ms, isRecording = voiceRecorder.isRecording.value))
+                }
+            }
+        }
+    }
+
+    private fun onVoiceRecordStop() {
+        voiceRecorder.stop()
+        voiceElapsedJob?.cancel()
+        voiceElapsedJob = null
+        _state.update { state ->
+            val voice = state.voiceEdit ?: return@update state
+            state.copy(voiceEdit = voice.copy(isRecording = false))
+        }
+    }
+
+    fun onVoiceDelete() {
+        val id = _state.value.voiceEdit?.id
+        if (!id.isNullOrEmpty()) voiceRecorder.delete(id)
+        _state.update { state ->
+            val voice = state.voiceEdit ?: return@update state
+            val replacement = "voice()"
+            val text = state.input.text
+            val newText = text.substring(0, voice.range.start) + replacement + text.substring(voice.range.end)
+            val newRange = TextRange(voice.range.start, voice.range.start + replacement.length)
+            state.copy(
+                input = TextFieldValue(newText, selection = TextRange(newRange.start + "voice(".length)),
+                voiceEdit = VoiceEdit(range = newRange, id = "", isRecording = false, elapsedMs = 0L),
+            )
+        }
+    }
+
+    fun onVoiceDone() {
+        if (voiceRecorder.isRecording.value) voiceRecorder.stop()
+        voiceElapsedJob?.cancel()
+        voiceElapsedJob = null
+        _state.update {
+            val cursorPos = it.voiceEdit?.range?.end ?: it.input.selection.end
+            val newInput = it.input.copy(selection = TextRange(cursorPos))
+            it.copy(
+                input = newInput,
+                voiceEdit = null,
+                suggestions = suggestionsFor(newInput),
+                parameterHint = parameterHintFor(newInput),
+            )
+        }
+    }
+
     private fun stopPlaybackIfNeeded() {
         if (soundCommandRepository.playbackState.value != PlaybackState.STOPPED) {
             soundCommandRepository.stop()
@@ -159,6 +257,7 @@ class CreateViewModel(
     }
 
     override fun onCleared() {
+        if (voiceRecorder.isRecording.value) voiceRecorder.stop()
         soundCommandRepository.stop()
         super.onCleared()
     }
@@ -210,6 +309,22 @@ class CreateViewModel(
         return SliderEdit(range, position, formatSliderValue(position))
     }
 
+    private fun resolveVoiceEdit(value: TextFieldValue, hint: SoundCommandSpec?): VoiceEdit? {
+        if (hint == null || !hint.name.equals("voice", ignoreCase = true)) return null
+        val enclosing = findEnclosingCommand(value) ?: return null
+        val closeParen = value.text.indexOf(')', enclosing.openParen + 1)
+        if (closeParen < 0) return null
+        val range = TextRange(enclosing.nameStart, closeParen + 1)
+        val existingId = value.text.substring(enclosing.openParen + 1, closeParen).trim()
+        val current = _state.value.voiceEdit
+        return VoiceEdit(
+            range = range,
+            id = existingId,
+            isRecording = current?.isRecording ?: false,
+            elapsedMs = current?.elapsedMs ?: 0L,
+        )
+    }
+
     private fun findAllAnchorOffsets(text: String, regex: Regex): List<Int> {
         return regex.findAll(text).mapNotNull { match ->
             val lineStart = text.lastIndexOf('\n', match.range.first).let { if (it == -1) 0 else it + 1 }
@@ -255,7 +370,10 @@ class CreateViewModel(
 
     private fun applySuggestion(value: TextFieldValue, spec: SoundCommandSpec): TextFieldValue {
         val cursor = value.selection.start
-        val start = wordStart(value.text, cursor)
+        var start = wordStart(value.text, cursor)
+        if (spec.usage.startsWith(".") && start > 0 && value.text[start - 1] == '.') {
+            start--
+        }
         val newText = value.text.substring(0, start) + spec.usage + value.text.substring(cursor)
 
         val argsStart = start + spec.name.length + 1

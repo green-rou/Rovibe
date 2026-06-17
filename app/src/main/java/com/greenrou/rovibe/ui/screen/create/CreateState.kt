@@ -13,6 +13,7 @@ data class CreateState(
     val title: String? = null,
     val playbackState: PlaybackState = PlaybackState.STOPPED,
     val sliderEdit: SliderEdit? = null,
+    val voiceEdit: VoiceEdit? = null,
     val amplitude: Float = 0f,
     val spectrumBands: FloatArray = FloatArray(24),
     val waveAnchorOffsets: List<Int> = emptyList(),
@@ -24,6 +25,13 @@ data class SliderEdit(
     val range: TextRange,
     val position: Float,
     val valueText: String,
+)
+
+data class VoiceEdit(
+    val range: TextRange,
+    val id: String,
+    val isRecording: Boolean = false,
+    val elapsedMs: Long = 0L,
 )
 
 data class PianoVisualizer(

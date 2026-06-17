@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,7 @@ private val DividerColor = Color(0xFF21262D)
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
     val initialLang = remember {
         val locales = AppCompatDelegate.getApplicationLocales()
@@ -70,7 +72,6 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             .padding(horizontal = 16.dp, vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        // Language
         SettingsSection(title = stringResource(R.string.settings_language)) {
             LanguageRow(
                 label = stringResource(R.string.lang_english),
@@ -91,12 +92,6 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             )
         }
 
-        // Appearance
-        SettingsSection(title = stringResource(R.string.settings_appearance)) {
-            InfoRow(text = stringResource(R.string.settings_theme_coming_soon))
-        }
-
-        // Commands
         SettingsSection(title = stringResource(R.string.settings_commands)) {
             SoundCommandSpecs.ALL.forEachIndexed { index, spec ->
                 if (index > 0) SectionDivider()
@@ -104,11 +99,20 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        // About
         SettingsSection(title = stringResource(R.string.settings_about)) {
             InfoRow(text = "Rovibe v$version")
             SectionDivider()
             InfoRow(text = stringResource(R.string.about_description))
+            SectionDivider()
+            LinkRow(
+                text = stringResource(R.string.settings_github),
+                onClick = { uriHandler.openUri("https://github.com/green-rou/Rovibe") },
+            )
+            SectionDivider()
+            LinkRow(
+                text = stringResource(R.string.settings_support),
+                onClick = { uriHandler.openUri("https://ko-fi.com/C0C31ZLH6K") },
+            )
         }
     }
 }
@@ -175,6 +179,23 @@ private fun InfoRow(text: String) {
         Text(
             text = text,
             color = SecondaryTextColor,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 13.sp,
+        )
+    }
+}
+
+@Composable
+private fun LinkRow(text: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Text(
+            text = text,
+            color = AccentColor,
             fontFamily = FontFamily.Monospace,
             fontSize = 13.sp,
         )
