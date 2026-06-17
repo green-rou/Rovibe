@@ -44,6 +44,7 @@ class CompositionStore(context: Context) {
                 blockObj.put("id", block.id)
                 blockObj.put("soundId", block.soundId)
                 blockObj.put("startBar", block.startBar.toDouble())
+                blockObj.put("durationBars", block.durationBars.toDouble())
                 patternsArray.put(blockObj)
             }
             trackObj.put("patterns", patternsArray)
@@ -64,6 +65,7 @@ class CompositionStore(context: Context) {
                     id = blockObj.getString("id"),
                     soundId = blockObj.getString("soundId"),
                     startBar = blockObj.optDouble("startBar", 0.0).toFloat(),
+                    durationBars = blockObj.optDouble("durationBars", 1.0).toFloat(),
                 )
             }
             CompositionTrack(

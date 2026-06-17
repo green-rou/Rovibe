@@ -20,6 +20,11 @@ sealed interface SoundCommand {
     data class WithVolume(val command: SoundCommand, val level: Float) : SoundCommand
     data class WithTempo(val command: SoundCommand, val bpm: Int) : SoundCommand
     data class Reverse(val command: SoundCommand) : SoundCommand
+    data class WithPitch(val command: SoundCommand, val factor: Float) : SoundCommand
+    data class WithSpeed(val command: SoundCommand, val factor: Float) : SoundCommand
+    data class WithFadeIn(val command: SoundCommand, val durationMs: Long) : SoundCommand
+    data class WithFadeOut(val command: SoundCommand, val durationMs: Long) : SoundCommand
     data object After : SoundCommand
     data object AfterAll : SoundCommand
+    data class Voice(val id: String) : SoundCommand
 }

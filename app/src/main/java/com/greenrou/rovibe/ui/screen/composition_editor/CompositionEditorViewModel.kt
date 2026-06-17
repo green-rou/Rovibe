@@ -12,6 +12,7 @@ import com.greenrou.rovibe.data.composition.generateCompositionName
 import com.greenrou.rovibe.data.sound.AudioTrackSoundEngine
 import com.greenrou.rovibe.data.sound.SoundCommandRepository
 import com.greenrou.rovibe.data.sound.SoundDurationCalculator
+import com.greenrou.rovibe.data.sound.VoiceRecorder
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -28,6 +29,7 @@ import java.util.UUID
 class CompositionEditorViewModel(
     private val compositionRepository: CompositionRepository,
     private val soundRepository: SoundRepository,
+    private val voiceRecorder: VoiceRecorder,
     compositionId: String?,
 ) : ViewModel() {
 
@@ -145,8 +147,6 @@ class CompositionEditorViewModel(
         compositionRepository.update(_composition.value)
     }
 
-    // ── Playback ────────────────────────────────────────────────────────────
-
     private val trackEngines = mutableMapOf<String, Pair<AudioTrackSoundEngine, SoundCommandRepository>>()
     private var playJob: Job? = null
 
@@ -155,14 +155,13 @@ class CompositionEditorViewModel(
             stop()
             return
         }
-        playJob?.cancel()
+        stop()
         playJob = viewModelScope.launch {
             val comp = _composition.value
             val barMs = (60_000.0 / comp.bpm) * 4
             val t0 = SystemClock.elapsedRealtime()
             _playbackState.value = CompositionPlaybackState.PLAYING
             coroutineScope {
-                // Position tracking at ~60fps
                 launch {
                     while (isActive) {
                         _playbackPositionBar.value = ((SystemClock.elapsedRealtime() - t0) / barMs).toFloat()
@@ -173,7 +172,7 @@ class CompositionEditorViewModel(
                     if (track.patterns.isEmpty()) return@forEach
                     launch {
                         val (_, repo) = trackEngines.getOrPut(track.id) {
-                            val e = AudioTrackSoundEngine()
+                            val e = AudioTrackSoundEngine(voiceRecorder)
                             e to SoundCommandRepository(e)
                         }
                         track.patterns.sortedBy { it.startBar }.forEach { block ->
@@ -194,6 +193,7 @@ class CompositionEditorViewModel(
     fun stop() {
         playJob?.cancel()
         trackEngines.values.forEach { (_, repo) -> repo.stop() }
+        trackEngines.clear()
         _playbackPositionBar.value = 0f
         _playbackState.value = CompositionPlaybackState.STOPPED
     }
@@ -202,8 +202,6 @@ class CompositionEditorViewModel(
         stop()
         super.onCleared()
     }
-
-    // ── Helpers ─────────────────────────────────────────────────────────────
 
     private fun mutate(transform: (Composition) -> Composition) {
         _composition.update(transform)

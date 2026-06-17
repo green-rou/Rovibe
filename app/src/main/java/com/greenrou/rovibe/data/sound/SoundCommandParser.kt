@@ -96,6 +96,7 @@ object SoundCommandParser {
             "tempo" -> SoundCommand.Tempo(parts.getOrElse(0) { "120" }.toIntOrNull() ?: 120)
             "after" -> SoundCommand.After
             "after_all" -> SoundCommand.AfterAll
+            "voice" -> SoundCommand.Voice(parts.getOrElse(0) { "" }.trim())
             else -> null
         }
     }
@@ -122,6 +123,10 @@ object SoundCommandParser {
                 bpm = parts.getOrElse(0) { "120" }.toIntOrNull() ?: 120,
             )
             "reverse" -> SoundCommand.Reverse(base)
+            "pitch" -> SoundCommand.WithPitch(base, parts.getOrElse(0) { "1" }.toFloatOrNull() ?: 1f)
+            "speed" -> SoundCommand.WithSpeed(base, parts.getOrElse(0) { "1" }.toFloatOrNull() ?: 1f)
+            "fadein" -> SoundCommand.WithFadeIn(base, parseSeconds(parts.getOrElse(0) { "0.5s" }))
+            "fadeout" -> SoundCommand.WithFadeOut(base, parseSeconds(parts.getOrElse(0) { "0.5s" }))
             else -> null
         }
     }

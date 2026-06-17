@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,6 +30,16 @@ fun CreateScreen(
     viewModel: CreateViewModel = koinViewModel(parameters = { parametersOf(itemId) }),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> viewModel.onVoicePermissionResult(granted) }
+
+    LaunchedEffect(Unit) {
+        viewModel.requestPermission.collect {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
     LaunchedEffect(state.isSaved) {
         if (state.isSaved) onSaved()
@@ -65,16 +78,24 @@ fun CreateScreen(
                     .fillMaxSize(),
             )
             val sliderEdit = state.sliderEdit
-            if (sliderEdit != null) {
-                CreateSliderBar(
+            val voiceEdit = state.voiceEdit
+            when {
+                sliderEdit != null -> CreateSliderBar(
                     position = sliderEdit.position,
                     value = sliderEdit.valueText,
                     onPositionChange = viewModel::onSliderPositionChange,
                     onPositionChangeFinished = viewModel::onSliderPositionChangeFinished,
                     onDone = viewModel::onSliderDone,
                 )
-            } else {
-                CreateSuggestionBar(
+                voiceEdit != null -> CreateVoiceBar(
+                    isRecording = voiceEdit.isRecording,
+                    elapsedMs = voiceEdit.elapsedMs,
+                    hasRecording = voiceEdit.id.isNotEmpty(),
+                    onToggleRecord = viewModel::onVoiceToggleRecord,
+                    onDelete = viewModel::onVoiceDelete,
+                    onDone = viewModel::onVoiceDone,
+                )
+                else -> CreateSuggestionBar(
                     suggestions = state.suggestions,
                     parameterHint = state.parameterHint,
                     onSuggestionClick = viewModel::onSuggestionSelected,

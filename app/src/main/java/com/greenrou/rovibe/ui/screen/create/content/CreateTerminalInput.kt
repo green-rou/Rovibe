@@ -86,8 +86,6 @@ fun CreateTerminalInput(
     val isEmpty = value.text.isEmpty()
 
     Column(modifier = modifier.background(TerminalBackground)) {
-        // Text field: wrap height when empty (shows just the "$ " line),
-        // fills remaining space when there is content.
         Box(
             modifier = if (isEmpty) Modifier.fillMaxWidth()
             else Modifier.weight(1f).fillMaxWidth().clipToBounds()
@@ -136,7 +134,6 @@ fun CreateTerminalInput(
         }
 
         if (isEmpty) {
-            // One blank line between the "$ " prompt and the command list.
             Spacer(modifier = Modifier.height(with(LocalDensity.current) { LineHeight.toDp() }))
             CommandCheatSheet(
                 modifier = Modifier
@@ -273,14 +270,14 @@ private object PromptTransformation : VisualTransformation {
 private fun AnnotatedString.Builder.appendHighlightedLine(line: String) {
     var lastEnd = 0
     for (match in CommandNameRegex.findAll(line)) {
+        if (match.range.first < lastEnd) continue
         if (match.range.first > lastEnd) {
             append(line.substring(lastEnd, match.range.first))
         }
         val name = match.value
         val color = CommandColors[name.lowercase()] ?: TerminalForeground
-        // match.range.last + 1 is '(' (lookahead stops before it); extend color to closing ')'
         val openParen = match.range.last + 1
-        val closeParen = line.indexOf(')', openParen)
+        val closeParen = findMatchingParen(line, openParen)
         val colorEnd = if (closeParen >= 0) closeParen + 1 else line.length
         withStyle(SpanStyle(color = color)) {
             append(line.substring(match.range.first, colorEnd))
@@ -290,6 +287,19 @@ private fun AnnotatedString.Builder.appendHighlightedLine(line: String) {
     if (lastEnd < line.length) {
         append(line.substring(lastEnd))
     }
+}
+
+private fun findMatchingParen(line: String, openIndex: Int): Int {
+    var depth = 1
+    var i = openIndex + 1
+    while (i < line.length) {
+        when (line[i]) {
+            '(' -> depth++
+            ')' -> { depth--; if (depth == 0) return i }
+        }
+        i++
+    }
+    return -1
 }
 
 private class VisualizerOffsetMapping(

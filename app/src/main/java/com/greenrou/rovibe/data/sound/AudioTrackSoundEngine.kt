@@ -46,7 +46,7 @@ private const val BAND_ATTACK = 0.6f
 private const val BAND_RELEASE = 0.12f
 private const val BAND_GAIN = 2f
 
-class AudioTrackSoundEngine : SoundEngine {
+class AudioTrackSoundEngine(private val voiceRecorder: VoiceRecorder? = null) : SoundEngine {
 
     private var audioTrack: AudioTrack? = null
     private var playbackGeneration = 0
@@ -178,8 +178,8 @@ class AudioTrackSoundEngine : SoundEngine {
                 }
                 when {
                     written > 0 -> writerOffset += written
-                    written == 0 -> delay(1)   // buffer full (track paused), yield and retry
-                    else -> break              // real error (negative code)
+                    written == 0 -> delay(1)
+                    else -> break
                 }
             }
         }
@@ -194,7 +194,6 @@ class AudioTrackSoundEngine : SoundEngine {
                 }
                 if (_playbackState.value == PlaybackState.PLAYING) {
                     val pos = try { track.playbackHeadPosition } catch (e: IllegalStateException) { break }
-                    // Fallback: detect end-of-playback if onMarkerReached didn't fire
                     if (renderedSamples.isNotEmpty() && pos >= renderedSamples.size) {
                         if (generation == playbackGeneration) _playbackState.value = PlaybackState.STOPPED
                         break
@@ -345,8 +344,17 @@ class AudioTrackSoundEngine : SoundEngine {
             result
         }
         is SoundCommand.Reverse -> render(command.command, state).reversedArray()
+        is SoundCommand.WithPitch -> WaveformGenerator.pitchShift(render(command.command, state), command.factor)
+        is SoundCommand.WithSpeed -> WaveformGenerator.resample(render(command.command, state), command.factor)
+        is SoundCommand.WithFadeIn -> WaveformGenerator.applyFadeIn(render(command.command, state), command.durationMs)
+        is SoundCommand.WithFadeOut -> WaveformGenerator.applyFadeOut(render(command.command, state), command.durationMs)
         is SoundCommand.After -> ShortArray(0)
         is SoundCommand.AfterAll -> ShortArray(0)
+        is SoundCommand.Voice -> {
+            if (command.id.isNotEmpty() && voiceRecorder != null) {
+                voiceRecorder.loadPcmSamples(command.id)
+            } else ShortArray(0)
+        }
     }
 
     private fun renderPattern(
@@ -418,7 +426,6 @@ class AudioTrackSoundEngine : SoundEngine {
         var base = 0
         var groupStart = 0
         var previousIndex = -1
-        // Non-null means the NEXT sound command must start at this offset (from an `after` marker).
         var pendingAfterOffset: Int? = null
 
         for (i in commands.indices) {
@@ -437,7 +444,6 @@ class AudioTrackSoundEngine : SoundEngine {
                         }
                     }
                     groupStart = i + 1
-                    // Reset so `after` after `after_all` won't reference a pre-barrier command.
                     previousIndex = -1
                     pendingAfterOffset = null
                 }

@@ -58,7 +58,6 @@ fun CompositionGrid(
     ).toInt() + 8
 
     Box(modifier = modifier.fillMaxSize()) {
-        // ── Right scrollable content ─────────────────────────────────────────
         Box(
             modifier = Modifier
                 .padding(start = HeaderWidth)
@@ -87,7 +86,6 @@ fun CompositionGrid(
                     )
                 }
 
-                // Spacer matching the add-track button height in the left header
                 Box(
                     modifier = Modifier
                         .width(BarWidth * totalBars)
@@ -96,7 +94,6 @@ fun CompositionGrid(
                 )
             }
 
-            // Playback position line (overlaid in the scrollable content space)
             if (playbackState == CompositionPlaybackState.PLAYING) {
                 Box(
                     modifier = Modifier
@@ -108,7 +105,6 @@ fun CompositionGrid(
             }
         }
 
-        // ── Left fixed header column ─────────────────────────────────────────
         Box(
             modifier = Modifier
                 .width(HeaderWidth)
@@ -116,7 +112,6 @@ fun CompositionGrid(
                 .clipToBounds(),
         ) {
             Column(modifier = Modifier.verticalScroll(vertScroll, enabled = false)) {
-                // Ruler spacer
                 Box(
                     modifier = Modifier
                         .width(HeaderWidth)
@@ -139,7 +134,6 @@ fun CompositionGrid(
                     )
                 }
 
-                // Add-track button — always visible, no horizontal scroll needed
                 Box(
                     modifier = Modifier
                         .width(HeaderWidth)
@@ -160,7 +154,6 @@ fun CompositionGrid(
             }
         }
 
-        // ── Header/ruler separator line ──────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()

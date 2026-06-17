@@ -30,14 +30,15 @@ private data class BottomNavItem(
 )
 
 private val navItems = listOf(
-    BottomNavItem(Routes.SOUNDS, R.string.tab_sounds, Icons.Filled.MusicNote),
-    BottomNavItem(Routes.COMPOSITIONS, R.string.tab_compositions, Icons.Filled.QueueMusic),
+    BottomNavItem(Routes.SOUNDS_GRAPH, R.string.tab_sounds, Icons.Filled.MusicNote),
+    BottomNavItem(Routes.COMPOSITIONS_GRAPH, R.string.tab_compositions, Icons.Filled.QueueMusic),
     BottomNavItem(Routes.SETTINGS, R.string.tab_settings, Icons.Filled.Settings),
 )
 
 @Composable
 fun MainBottomBar(
     currentRoute: String?,
+    parentRoute: String?,
     onNavigate: (String) -> Unit,
 ) {
     NavigationBar(
@@ -45,7 +46,7 @@ fun MainBottomBar(
         tonalElevation = androidx.compose.ui.unit.Dp.Hairline,
     ) {
         navItems.forEach { item ->
-            val selected = currentRoute == item.route
+            val selected = parentRoute == item.route || currentRoute == item.route
             NavigationBarItem(
                 selected = selected,
                 onClick = { onNavigate(item.route) },

@@ -40,7 +40,6 @@ fun BeatRuler(
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.width(barWidth),
                 )
-                // Bar separator line at right edge
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)

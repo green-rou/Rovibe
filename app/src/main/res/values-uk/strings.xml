@@ -17,6 +17,8 @@
     <string name="rename_title">Перейменувати запис</string>
     <string name="cancel">Скасувати</string>
     <string name="done">Готово</string>
+    <string name="voice_record">Записати</string>
+    <string name="voice_delete">Видалити запис</string>
 
     <!-- Вкладки навігації -->
     <string name="tab_sounds">Звуки</string>
@@ -45,6 +47,8 @@
     <string name="lang_english">English</string>
     <string name="lang_ukrainian">Українська</string>
     <string name="about_description">Термінальний редактор звуку для Android.</string>
+    <string name="settings_github">GitHub</string>
+    <string name="settings_support">Підтримати на Ko-fi</string>
 
     <!-- Описи команд -->
     <string name="cmd_play_desc">Синусоїда заданої частоти та тривалості</string>
@@ -63,9 +67,14 @@
     <string name="cmd_loop_desc">Повторити з паузою між повторами</string>
     <string name="cmd_repeat_desc">Повторити одразу, без паузи</string>
     <string name="cmd_reverse_desc">Відтворити аудіо у зворотному порядку</string>
+    <string name="cmd_pitch_desc">Зміна тональності (2.0 = октава вгору, 0.5 = вниз)</string>
+    <string name="cmd_speed_desc">Зміна швидкості й тональності (2.0 = 2× швидше)</string>
+    <string name="cmd_fadein_desc">Плавне наростання гучності за заданий час</string>
+    <string name="cmd_fadeout_desc">Плавне затухання гучності за заданий час</string>
     <string name="cmd_after_desc">Наступна команда — після завершення команди вище</string>
     <string name="cmd_after_all_desc">Команди нижче — після завершення всіх команд вище</string>
     <string name="cmd_slider_desc">Повзунок для числового аргументу в редакторі</string>
+    <string name="cmd_voice_desc">Запис аудіо з мікрофону</string>
     <string name="cmd_wave_desc">Анімована синусоїда-візуалізатор, 3 рядки</string>
     <string name="cmd_bars_desc">Частотний спектр стовпців, 3 рядки</string>
     <string name="cmd_piano_desc">Піано-рол: номери нот 1–52 (C3–E7), через пробіл</string>

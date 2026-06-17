@@ -60,6 +60,48 @@ object WaveformGenerator {
         return result
     }
 
+    fun resample(samples: ShortArray, factor: Float): ShortArray {
+        if (samples.isEmpty() || factor <= 0f) return samples
+        val newSize = (samples.size / factor).toInt().coerceAtLeast(1)
+        return ShortArray(newSize) { i ->
+            val srcPos = i * factor
+            val idx = srcPos.toInt()
+            val frac = srcPos - idx
+            val a = samples[idx.coerceIn(0, samples.lastIndex)]
+            val b = samples[(idx + 1).coerceIn(0, samples.lastIndex)]
+            (a + (b - a) * frac).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+        }
+    }
+
+    fun pitchShift(samples: ShortArray, factor: Float): ShortArray {
+        if (samples.isEmpty() || factor <= 0f) return samples
+        val resampled = resample(samples, factor)
+        return resample(resampled, resampled.size.toFloat() / samples.size)
+    }
+
+    fun applyFadeIn(samples: ShortArray, fadeMs: Long): ShortArray {
+        if (samples.isEmpty()) return samples
+        val fadeSamples = sampleCount(fadeMs).coerceAtMost(samples.size)
+        val result = samples.copyOf()
+        for (i in 0 until fadeSamples) {
+            val gain = i.toFloat() / fadeSamples
+            result[i] = (result[i] * gain).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+        }
+        return result
+    }
+
+    fun applyFadeOut(samples: ShortArray, fadeMs: Long): ShortArray {
+        if (samples.isEmpty()) return samples
+        val fadeSamples = sampleCount(fadeMs).coerceAtMost(samples.size)
+        val result = samples.copyOf()
+        val fadeStart = result.size - fadeSamples
+        for (i in fadeStart until result.size) {
+            val gain = (result.size - 1 - i).toFloat() / fadeSamples
+            result[i] = (result[i] * gain).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+        }
+        return result
+    }
+
     private fun decayEnvelope(index: Int, total: Int): Float =
         if (total <= 1) 1f else 1f - index.toFloat() / total
 
