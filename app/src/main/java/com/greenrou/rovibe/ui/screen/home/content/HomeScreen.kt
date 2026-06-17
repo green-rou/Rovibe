@@ -1,6 +1,7 @@
 package com.greenrou.rovibe.ui.screen.home.content
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -55,6 +56,10 @@ fun HomeScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var renamingItem by remember { mutableStateOf<SoundItem?>(null) }
+    val fabBottomOffset by animateDpAsState(
+        targetValue = if (state.pendingDelete != null) 56.dp else 0.dp,
+        label = "fab_offset",
+    )
 
     LaunchedEffect(state.pendingDelete) {
         if (state.pendingDelete != null) {
@@ -68,11 +73,13 @@ fun HomeScreen(
         contentWindowInsets = WindowInsets(0),
         topBar = { HomeTopBar() },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.add_record),
-                )
+            Box(modifier = Modifier.padding(bottom = fabBottomOffset)) {
+                FloatingActionButton(onClick = onAddClick) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_record),
+                    )
+                }
             }
         },
     ) { innerPadding ->
@@ -84,6 +91,8 @@ fun HomeScreen(
                     sounds = state.items,
                     playingItemId = state.playingItemId,
                     playbackState = state.playbackState,
+                    playbackPositionMs = state.playbackPositionMs,
+                    playbackDurationMs = state.playbackDurationMs,
                     onOpenClick = { onItemClick(it.id) },
                     onPlayToggle = viewModel::togglePlay,
                     onRenameClick = { renamingItem = it },

@@ -127,13 +127,23 @@ Visualizer commands render an animated Canvas overlay spanning three lines direc
 | `bars()` | Vertical bar spectrum, amplitude-reactive |
 | `piano(...)` | Scrolling FL Studio-style piano roll |
 
-### Comments
+### Special prefixes
 
-Lines beginning with `#` are displayed in gray and ignored during playback.
+| Prefix | Behavior |
+|---|---|
+| `#` | Comment — line is shown in gray and skipped during playback |
+| `!` | Solo — only lines prefixed with `!` (and their `.` modifier lines) are played; all other lines are ignored |
 
 ```
 # kick pattern
 bass(1 0 0 0 1 0 0 0)
+```
+
+```
+# only the bass plays in this script
+! bass(1 0 0 0 1 0 0 0)
+snare(0 0 1 0 0 0 1 0)
+hihat(1 1 1 1 1 1 1 1)
 ```
 
 ---
@@ -145,6 +155,7 @@ bass(1 0 0 0 1 0 0 0)
 - Tap the play button in the top bar to render and play the script. Tap again to pause or resume.
 - Scripts are saved to the device and listed on the home screen. Long-press a script to rename it.
 - Prefix a line with `#` to disable it without deleting it.
+- Prefix a line with `!` to solo it — when any `!` line exists, only those lines (and any `.` modifier lines following them) are played.
 - Start a line with `.` to attach a modifier to the command on the line above instead of writing everything on one line.
 
 ---

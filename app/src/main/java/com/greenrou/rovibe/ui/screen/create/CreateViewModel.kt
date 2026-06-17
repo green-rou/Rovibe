@@ -113,10 +113,13 @@ class CreateViewModel(
     fun onSliderDone() {
         val text = _state.value.input.text
         _state.update {
+            val cursorPos = it.sliderEdit?.range?.end ?: it.input.selection.end
+            val newInput = it.input.copy(selection = TextRange(cursorPos))
             it.copy(
+                input = newInput,
                 sliderEdit = null,
-                suggestions = suggestionsFor(it.input),
-                parameterHint = parameterHintFor(it.input),
+                suggestions = suggestionsFor(newInput),
+                parameterHint = parameterHintFor(newInput),
             )
         }
         soundCommandRepository.play(text)

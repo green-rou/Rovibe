@@ -21,16 +21,25 @@ class HomeViewModel(
     private val _pendingDelete = MutableStateFlow<SoundItem?>(null)
 
     val state: StateFlow<HomeState> = combine(
-        repository.items,
-        soundCommandRepository.playbackState,
-        _playingItemId,
-        _pendingDelete,
-    ) { items, playback, playingId, pending ->
-        HomeState(
-            items = items,
-            playingItemId = if (playback == PlaybackState.STOPPED) null else playingId,
-            playbackState = playback,
-            pendingDelete = pending,
+        combine(
+            repository.items,
+            soundCommandRepository.playbackState,
+            _playingItemId,
+            _pendingDelete,
+        ) { items, playback, playingId, pending ->
+            HomeState(
+                items = items,
+                playingItemId = if (playback == PlaybackState.STOPPED) null else playingId,
+                playbackState = playback,
+                pendingDelete = pending,
+            )
+        },
+        soundCommandRepository.currentPositionMs,
+        soundCommandRepository.totalDurationMs,
+    ) { base, positionMs, durationMs ->
+        base.copy(
+            playbackPositionMs = positionMs,
+            playbackDurationMs = durationMs,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeState())
 

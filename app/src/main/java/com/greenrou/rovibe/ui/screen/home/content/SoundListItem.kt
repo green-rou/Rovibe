@@ -1,5 +1,6 @@
 package com.greenrou.rovibe.ui.screen.home.content
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,17 +16,19 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.greenrou.rovibe.R
 import com.greenrou.rovibe.data.SoundItem
+import com.greenrou.rovibe.data.sound.SoundDurationCalculator
 import com.greenrou.rovibe.ui.component.PlayPauseIcon
 import java.time.format.DateTimeFormatter
 
@@ -35,11 +38,19 @@ private val displayFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 fun SoundListItem(
     item: SoundItem,
     isPlaying: Boolean,
+    positionMs: Long,
+    durationMs: Long,
     onOpenClick: () -> Unit,
     onPlayToggle: () -> Unit,
     onRenameClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val totalMs = remember(item.content, durationMs) {
+        if (durationMs > 0) durationMs
+        else SoundDurationCalculator.calculateDurationMs(item.content)
+    }
+    val progress = if (totalMs > 0) (positionMs.toFloat() / totalMs).coerceIn(0f, 1f) else 0f
+
     Card(
         onClick = onOpenClick,
         modifier = modifier.fillMaxWidth(),
@@ -82,15 +93,26 @@ fun SoundListItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                previewLine(item.content)?.let { preview ->
-                    Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth(),
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
                     Text(
-                        text = preview,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
+                        text = formatTime(positionMs),
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = formatTime(totalMs),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -104,5 +126,9 @@ fun SoundListItem(
     }
 }
 
-private fun previewLine(content: String): String? =
-    content.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() }
+private fun formatTime(ms: Long): String {
+    val totalSeconds = (ms / 1000).coerceAtLeast(0)
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "$minutes:%02d".format(seconds)
+}
