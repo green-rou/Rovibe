@@ -67,6 +67,12 @@ class AudioTrackSoundEngine : SoundEngine {
     override val spectrumBands: StateFlow<FloatArray> = _spectrumBands.asStateFlow()
     private val smoothedBands = FloatArray(BAND_COUNT)
 
+    private val _currentPositionMs = MutableStateFlow(0L)
+    override val currentPositionMs: StateFlow<Long> = _currentPositionMs.asStateFlow()
+
+    private val _totalDurationMs = MutableStateFlow(0L)
+    override val totalDurationMs: StateFlow<Long> = _totalDurationMs.asStateFlow()
+
     override fun play(commands: List<SoundCommand>) {
         stop()
         playbackGeneration++
@@ -79,6 +85,8 @@ class AudioTrackSoundEngine : SoundEngine {
         val samples = WaveformGenerator.mix(padded)
         if (samples.isEmpty()) return
         renderedSamples = samples
+        _totalDurationMs.value = samples.size * 1000L / WaveformGenerator.SAMPLE_RATE
+        _currentPositionMs.value = 0L
 
         val bytes = toPcm16(samples)
         val bufferSizeBytes = AudioTrack.getMinBufferSize(
@@ -137,7 +145,6 @@ class AudioTrackSoundEngine : SoundEngine {
         if (amplitudeJob?.isActive != true) {
             startAmplitudePolling(playbackGeneration)
         }
-        // Restart writer if it exited early (e.g. write() returned 0 on paused buffer)
         if (writerJob?.isActive != true && writerOffset < renderedBytes.size) {
             startWriter(track, renderedBytes, playbackGeneration)
         }
@@ -154,6 +161,8 @@ class AudioTrackSoundEngine : SoundEngine {
         track?.release()
         _playbackState.value = PlaybackState.STOPPED
         _amplitude.value = 0f
+        _currentPositionMs.value = 0L
+        _totalDurationMs.value = 0L
         _spectrumBands.value = FloatArray(BAND_COUNT)
         smoothedBands.fill(0f)
     }
@@ -190,6 +199,7 @@ class AudioTrackSoundEngine : SoundEngine {
                         if (generation == playbackGeneration) _playbackState.value = PlaybackState.STOPPED
                         break
                     }
+                    _currentPositionMs.value = pos * 1000L / WaveformGenerator.SAMPLE_RATE
                     _amplitude.value = sampleAmplitude(pos)
                     _spectrumBands.value = computeSpectrumBands(pos)
                 } else {

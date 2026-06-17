@@ -33,6 +33,8 @@ object SoundCommandSpecs {
         SoundCommandSpec("wave",      "wave()",                  R.string.cmd_wave_desc),
         SoundCommandSpec("bars",      "bars()",                  R.string.cmd_bars_desc),
         SoundCommandSpec("piano",     "piano(1 5 8 12)",         R.string.cmd_piano_desc),
+        SoundCommandSpec("#",         "# comment text",          R.string.cmd_comment_desc),
+        SoundCommandSpec("!",         "! play solo",             R.string.cmd_solo_desc),
     )
 
     fun matching(prefix: String): List<SoundCommandSpec> =

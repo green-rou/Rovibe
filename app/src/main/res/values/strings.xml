@@ -36,6 +36,18 @@
     <string name="lang_ukrainian">Українська</string>
     <string name="about_description">A terminal-style sound scripting app for Android.</string>
 
+    <!-- Compositions screen -->
+    <string name="compositions_empty_title">No compositions yet</string>
+    <string name="compositions_empty_subtitle">Tap «+» to create your first composition</string>
+    <string name="add_composition">Add composition</string>
+
+    <!-- Composition editor -->
+    <string name="composition_editor_bpm">BPM</string>
+    <string name="add_track">Add track</string>
+    <string name="pick_sound_title">Pick a sound</string>
+    <string name="no_sounds_available">No sounds yet</string>
+    <string name="delete_track">Delete track</string>
+
     <!-- Command descriptions -->
     <string name="cmd_play_desc">Sine wave at the given frequency and duration</string>
     <string name="cmd_pause_desc">Silence for the given duration</string>
@@ -59,4 +71,6 @@
     <string name="cmd_wave_desc">Animated waveform visualizer, spans 3 lines</string>
     <string name="cmd_bars_desc">Frequency spectrum bar visualizer, spans 3 lines</string>
     <string name="cmd_piano_desc">Piano roll: note numbers 1–52 (C3–E7), space-separated</string>
+    <string name="cmd_comment_desc">Line shown in gray, skipped during playback</string>
+    <string name="cmd_solo_desc">Solo — only lines marked with ! are played; all others are ignored</string>
 </resources>

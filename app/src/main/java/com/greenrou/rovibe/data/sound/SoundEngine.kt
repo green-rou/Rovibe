@@ -12,6 +12,8 @@ interface SoundEngine {
     val playbackState: StateFlow<PlaybackState>
     val amplitude: StateFlow<Float>
     val spectrumBands: StateFlow<FloatArray>
+    val currentPositionMs: StateFlow<Long>
+    val totalDurationMs: StateFlow<Long>
     fun play(commands: List<SoundCommand>)
     fun pause()
     fun resume()

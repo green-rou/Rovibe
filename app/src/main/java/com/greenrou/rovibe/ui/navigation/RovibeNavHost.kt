@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.greenrou.rovibe.ui.screen.composition_editor.content.CompositionEditorScreen
 import com.greenrou.rovibe.ui.screen.compositions.CompositionsScreen
 import com.greenrou.rovibe.ui.screen.create.content.CreateScreen
 import com.greenrou.rovibe.ui.screen.home.content.HomeScreen
@@ -23,7 +24,8 @@ fun RovibeNavHost() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute?.startsWith(Routes.CREATE) != true
+    val showBottomBar = currentRoute?.startsWith(Routes.CREATE) != true &&
+        currentRoute?.startsWith(Routes.COMPOSITION_EDITOR) != true
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -59,7 +61,24 @@ fun RovibeNavHost() {
                 )
             }
             composable(Routes.COMPOSITIONS) {
-                CompositionsScreen()
+                CompositionsScreen(
+                    onEditorOpen = { id -> navController.navigate(Routes.compositionEditor(id)) },
+                )
+            }
+            composable(
+                route = Routes.COMPOSITION_EDITOR_PATTERN,
+                arguments = listOf(
+                    navArgument(Routes.COMP_ID_ARG) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
+            ) { backStackEntry ->
+                CompositionEditorScreen(
+                    compositionId = backStackEntry.arguments?.getString(Routes.COMP_ID_ARG),
+                    onBack = { navController.popBackStack() },
+                )
             }
             composable(Routes.SETTINGS) {
                 SettingsScreen()

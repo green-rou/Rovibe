@@ -36,6 +36,8 @@ fun HomeSoundList(
     sounds: List<SoundItem>,
     playingItemId: String?,
     playbackState: PlaybackState,
+    playbackPositionMs: Long,
+    playbackDurationMs: Long,
     onOpenClick: (SoundItem) -> Unit,
     onPlayToggle: (SoundItem) -> Unit,
     onRenameClick: (SoundItem) -> Unit,
@@ -64,9 +66,12 @@ fun HomeSoundList(
                 enableDismissFromEndToStart = true,
                 backgroundContent = { DeleteBackground(dismissState) },
             ) {
+                val isThisItem = item.id == playingItemId
                 SoundListItem(
                     item = item,
-                    isPlaying = item.id == playingItemId && playbackState == PlaybackState.PLAYING,
+                    isPlaying = isThisItem && playbackState == PlaybackState.PLAYING,
+                    positionMs = if (isThisItem) playbackPositionMs else 0L,
+                    durationMs = if (isThisItem) playbackDurationMs else 0L,
                     onOpenClick = { onOpenClick(item) },
                     onPlayToggle = { onPlayToggle(item) },
                     onRenameClick = { onRenameClick(item) },

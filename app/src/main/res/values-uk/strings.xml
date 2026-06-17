@@ -25,6 +25,16 @@
 
     <!-- Екран композицій -->
     <string name="compositions_coming_soon">Незабаром</string>
+    <string name="compositions_empty_title">Поки немає композицій</string>
+    <string name="compositions_empty_subtitle">Натисніть «+», щоб створити першу композицію</string>
+    <string name="add_composition">Додати композицію</string>
+
+    <!-- Редактор композицій -->
+    <string name="composition_editor_bpm">BPM</string>
+    <string name="add_track">Додати доріжку</string>
+    <string name="pick_sound_title">Обери звук</string>
+    <string name="no_sounds_available">Немає звуків</string>
+    <string name="delete_track">Видалити доріжку</string>
 
     <!-- Налаштування -->
     <string name="settings_language">Мова</string>
@@ -59,4 +69,6 @@
     <string name="cmd_wave_desc">Анімована синусоїда-візуалізатор, 3 рядки</string>
     <string name="cmd_bars_desc">Частотний спектр стовпців, 3 рядки</string>
     <string name="cmd_piano_desc">Піано-рол: номери нот 1–52 (C3–E7), через пробіл</string>
+    <string name="cmd_comment_desc">Рядок сірого кольору, пропускається під час відтворення</string>
+    <string name="cmd_solo_desc">Соло — відтворюються лише рядки з !, решта ігноруються</string>
 </resources>
